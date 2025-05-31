@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Placeholder for an online PDF to Word (DOCX) converter. Accurate PDF to Word conversion is highly complex.">
+    <title>PDF to Word (Placeholder) - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>PDF to Word Converter</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="pdfFile">Choose a PDF file to convert to Word:</label>
+                <input type="file" id="pdfFile" accept="application/pdf">
+            </div>
+            
+            <button onclick="attemptConversion()">Convert to Word (Illustrative)</button>
+
+            <div class="placeholder-message" style="margin-top: 1.5rem;">
+                <h4>Functionality Notice</h4>
+                <p><strong>This tool is a placeholder.</strong> Converting PDF files to editable Word (DOCX) documents with accurate layout, text, and image retention is a very challenging task. Client-side solutions are rare and often limited. This typically requires sophisticated server-side processing with specialized software.</p>
+            </div>
+
+            <div id="fileInfo" class="result-area" style="display:none; margin-top: 1rem;">
+                <p id="selectedPdfName"></p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        const pdfFileInput = document.getElementById('pdfFile');
+        const fileInfoDisplay = document.getElementById('fileInfo');
+        const selectedPdfNameDisplay = document.getElementById('selectedPdfName');
+
+        pdfFileInput.addEventListener('change', function(event){
+            if (event.target.files && event.target.files[0]) {
+                const file = event.target.files[0];
+                selectedPdfNameDisplay.textContent = `Selected PDF: ${file.name} (Size: ${(file.size / (1024*1024)).toFixed(2)} MB)`;
+                fileInfoDisplay.style.display = 'block';
+            } else {
+                fileInfoDisplay.style.display = 'none';
+            }
+        });
+
+        function attemptConversion() {
+            if (pdfFileInput.files && pdfFileInput.files[0]) {
+                alert("This is a placeholder. PDF to Word conversion is very complex and typically requires server-side tools for accurate results.");
+            } else {
+                alert("Please select a PDF file first.");
+            }
+        }
+    </script>
+</body>
+</html>

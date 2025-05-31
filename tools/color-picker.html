@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pick a color using a native color input and get its HEX, RGB, and HSL values.">
+    <title>Color Picker - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Color Picker</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="colorPickerInput">Choose a Color:</label>
+                <input type="color" id="colorPickerInput" value="#007bff" style="width: 100px; height: 50px; border-radius: var(--border-radius); cursor: pointer;">
+            </div>
+
+            <div id="colorPreview" style="background-color: #007bff;"></div>
+            
+            <div id="colorValues" class="result-area" style="margin-top: 1.5rem;">
+                <h4>Color Values:</h4>
+                <p><strong>HEX:</strong> <span id="hexValue">#007bff</span> <button class="button-secondary" style="padding: 2px 6px; font-size: 0.8em;" onclick="copyValue('hexValue')">Copy</button></p>
+                <p><strong>RGB:</strong> <span id="rgbValue">rgb(0, 123, 255)</span> <button class="button-secondary" style="padding: 2px 6px; font-size: 0.8em;" onclick="copyValue('rgbValue')">Copy</button></p>
+                <p><strong>HSL:</strong> <span id="hslValue">hsl(211, 100%, 50%)</span> <button class="button-secondary" style="padding: 2px 6px; font-size: 0.8em;" onclick="copyValue('hslValue')">Copy</button></p>
+            </div>
+             <div id="copyMessage" class="placeholder-message" style="display:none; margin-top:1rem; background-color: var(--success-color); color:white;"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const colorPicker = document.getElementById('colorPickerInput');
+        const colorPreview = document.getElementById('colorPreview');
+        const hexValueDisplay = document.getElementById('hexValue');
+        const rgbValueDisplay = document.getElementById('rgbValue');
+        const hslValueDisplay = document.getElementById('hslValue');
+        const copyMessage = document.getElementById('copyMessage');
+
+        colorPicker.addEventListener('input', updateColorValues);
+
+        function updateColorValues() {
+            const hex = colorPicker.value;
+            colorPreview.style.backgroundColor = hex;
+            hexValueDisplay.textContent = hex;
+
+            const rgb = hexToRgb(hex);
+            rgbValueDisplay.textContent = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+
+            const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+            hslValueDisplay.textContent = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+        }
+
+        function hexToRgb(hex) {
+            let r = 0, g = 0, b = 0;
+            // 3 digits
+            if (hex.length == 4) {
+                r = parseInt(hex[1] + hex[1], 16);
+                g = parseInt(hex[2] + hex[2], 16);
+                b = parseInt(hex[3] + hex[3], 16);
+            }
+            // 6 digits
+            else if (hex.length == 7) {
+                r = parseInt(hex[1] + hex[2], 16);
+                g = parseInt(hex[3] + hex[4], 16);
+                b = parseInt(hex[5] + hex[6], 16);
+            }
+            return { r, g, b };
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max == min) {
+                h = s = 0; // achromatic
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { 
+                h: Math.round(h * 360), 
+                s: Math.round(s * 100), 
+                l: Math.round(l * 100) 
+            };
+        }
+        
+        function copyValue(elementId) {
+            const textToCopy = document.getElementById(elementId).textContent;
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = textToCopy;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            try {
+                document.execCommand('copy');
+                copyMessage.textContent = `${textToCopy} copied to clipboard!`;
+                copyMessage.style.display = 'block';
+                setTimeout(() => { copyMessage.style.display = 'none'; }, 2000);
+            } catch (err) {
+                copyMessage.textContent = `Failed to copy. Please copy manually.`;
+                copyMessage.style.backgroundColor = 'var(--error-color)';
+                copyMessage.style.display = 'block';
+                 setTimeout(() => { 
+                    copyMessage.style.display = 'none'; 
+                    copyMessage.style.backgroundColor = 'var(--success-color)'; // Reset color
+                }, 3000);
+                console.error('Failed to copy: ', err);
+            }
+            document.body.removeChild(tempTextArea);
+        }
+
+
+        // Initial update
+        updateColorValues();
+    </script>
+</body>
+</html>

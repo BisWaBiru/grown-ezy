@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Placeholder for an online ZIP compressor. Client-side file compression into ZIP archives is complex.">
+    <title>ZIP Compressor (Placeholder) - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>ZIP Compressor</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="filesToZip">Choose files to add to ZIP:</label>
+                <input type="file" id="filesToZip" multiple>
+            </div>
+            
+            <button onclick="attemptZip()">Create ZIP (Illustrative)</button>
+
+            <div class="placeholder-message" style="margin-top: 1.5rem;">
+                <h4>Functionality Notice</h4>
+                <p><strong>This tool is a placeholder.</strong> Creating ZIP archives entirely on the client-side requires complex compression algorithms and file handling (e.g., using libraries like JSZip). This is not implemented in this basic demo.</p>
+                <p>A production version would typically use server-side processing or a dedicated client-side library.</p>
+            </div>
+
+            <div id="fileList" class="result-area" style="display:none; margin-top: 1rem;">
+                <h4>Selected Files:</h4>
+                <ul id="selectedFilesList"></ul>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        const filesToZipInput = document.getElementById('filesToZip');
+        const fileListDisplay = document.getElementById('fileList');
+        const selectedFilesList = document.getElementById('selectedFilesList');
+
+        filesToZipInput.addEventListener('change', function(event){
+            selectedFilesList.innerHTML = ''; // Clear previous list
+            if (event.target.files && event.target.files.length > 0) {
+                for (let i = 0; i < event.target.files.length; i++) {
+                    const file = event.target.files[i];
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${file.name} (Size: ${(file.size / 1024).toFixed(2)} KB)`;
+                    selectedFilesList.appendChild(listItem);
+                }
+                fileListDisplay.style.display = 'block';
+            } else {
+                fileListDisplay.style.display = 'none';
+            }
+        });
+
+        function attemptZip() {
+            if (filesToZipInput.files && filesToZipInput.files.length > 0) {
+                alert("This is a placeholder. Actual ZIP creation would occur here using a library like JSZip, not implemented in this demo.");
+            } else {
+                alert("Please select files to ZIP first.");
+            }
+        }
+    </script>
+</body>
+</html>

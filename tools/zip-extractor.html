@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Placeholder for an online ZIP extractor. Client-side extraction of ZIP archives is complex.">
+    <title>ZIP Extractor (Placeholder) - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>ZIP Extractor</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="zipFile">Choose a ZIP file to extract:</label>
+                <input type="file" id="zipFile" accept=".zip, application/zip, application/x-zip-compressed">
+            </div>
+            
+            <button onclick="attemptExtraction()">Extract ZIP (Illustrative)</button>
+
+            <div class="placeholder-message" style="margin-top: 1.5rem;">
+                <h4>Functionality Notice</h4>
+                <p><strong>This tool is a placeholder.</strong> Extracting ZIP archives entirely on the client-side requires complex decompression algorithms and file handling (e.g., using libraries like JSZip or Pako). This is not implemented in this basic demo.</p>
+                <p>A production version would typically use server-side processing or a dedicated client-side library.</p>
+            </div>
+
+            <div id="fileInfo" class="result-area" style="display:none; margin-top: 1rem;">
+                <p id="selectedZipName"></p>
+                <h4>Extracted Files (Illustrative):</h4>
+                <ul id="extractedFilesList"></ul>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        const zipFileInput = document.getElementById('zipFile');
+        const fileInfoDisplay = document.getElementById('fileInfo');
+        const selectedZipNameDisplay = document.getElementById('selectedZipName');
+        const extractedFilesList = document.getElementById('extractedFilesList');
+
+        zipFileInput.addEventListener('change', function(event){
+            extractedFilesList.innerHTML = ''; // Clear previous list
+            if (event.target.files && event.target.files[0]) {
+                const file = event.target.files[0];
+                selectedZipNameDisplay.textContent = `Selected ZIP: ${file.name} (Size: ${(file.size / (1024*1024)).toFixed(2)} MB)`;
+                fileInfoDisplay.style.display = 'block';
+            } else {
+                fileInfoDisplay.style.display = 'none';
+            }
+        });
+
+        function attemptExtraction() {
+            if (zipFileInput.files && zipFileInput.files[0]) {
+                alert("This is a placeholder. Actual ZIP extraction would occur here using a library like JSZip, not implemented in this demo. Illustrative file list might appear below.");
+                // Dummy extracted files for illustration
+                extractedFilesList.innerHTML = '<li>dummy_file1.txt</li><li>image_example.jpg</li><li>folder/another_file.doc</li>';
+                fileInfoDisplay.style.display = 'block'; // Ensure it's visible
+            } else {
+                alert("Please select a ZIP file first.");
+            }
+        }
+    </script>
+</body>
+</html>

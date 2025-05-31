@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Resize images (JPG, PNG, WEBP) to specific dimensions or by percentage. Maintain aspect ratio optionally.">
+    <title>Image Resizer - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Image Resizer</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="imageFile">Choose an image (JPG, PNG, WEBP):</label>
+                <input type="file" id="imageFile" accept="image/jpeg, image/png, image/webp">
+            </div>
+
+            <div class="image-preview-container">
+                <img id="originalPreview" class="image-preview" src="#" alt="Original Image Preview" style="display:none;">
+                <p id="originalInfo"></p>
+            </div>
+
+            <div class="form-group">
+                <label for="resizeWidth">New Width (pixels):</label>
+                <input type="number" id="resizeWidth" placeholder="e.g., 800">
+            </div>
+            <div class="form-group">
+                <label for="resizeHeight">New Height (pixels):</label>
+                <input type="number" id="resizeHeight" placeholder="e.g., 600">
+            </div>
+            <div class="form-group">
+                <label><input type="checkbox" id="maintainAspectRatio" checked> Maintain Aspect Ratio</label>
+            </div>
+             <div class="form-group">
+                <label for="outputFormat">Output Format:</label>
+                <select id="outputFormat">
+                    <option value="original">Keep Original</option>
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/png">PNG</option>
+                    <option value="image/webp">WEBP</option>
+                </select>
+            </div>
+            
+            <button onclick="resizeImage()">Resize Image</button>
+
+            <div id="resultArea" class="result-area" style="display:none; margin-top: 1.5rem;">
+                <h4>Resized Image:</h4>
+                <img id="resizedPreview" class="image-preview" src="#" alt="Resized Image Preview">
+                <p id="resizedInfo"></p>
+                <a id="downloadLink" class="button mt-1" download="resized_image.png" style="display:none;">Download Resized Image</a>
+            </div>
+            <div id="errorMessage" class="placeholder-message" style="display:none; background-color: var(--error-color); color: white;"></div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const imageFileInput = document.getElementById('imageFile');
+        const originalPreview = document.getElementById('originalPreview');
+        const originalInfo = document.getElementById('originalInfo');
+        const resizeWidthInput = document.getElementById('resizeWidth');
+        const resizeHeightInput = document.getElementById('resizeHeight');
+        const maintainAspectRatioCheckbox = document.getElementById('maintainAspectRatio');
+        const outputFormatSelect = document.getElementById('outputFormat');
+        
+        const resizedPreview = document.getElementById('resizedPreview');
+        const resizedInfo = document.getElementById('resizedInfo');
+        const downloadLink = document.getElementById('downloadLink');
+        const resultArea = document.getElementById('resultArea');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let originalImage = null;
+        let originalFile = null;
+        let originalAspectRatio = 1;
+
+        imageFileInput.addEventListener('change', function(event) {
+            originalFile = event.target.files[0];
+            if (originalFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        originalPreview.src = e.target.result;
+                        originalPreview.style.display = 'block';
+                        originalInfo.textContent = `Original: ${originalFile.name} (${originalImage.width}x${originalImage.height}, ${(originalFile.size / 1024).toFixed(2)} KB)`;
+                        originalAspectRatio = originalImage.width / originalImage.height;
+                        // Pre-fill dimensions if checkbox is checked
+                        if (!resizeWidthInput.value && !resizeHeightInput.value) {
+                           resizeWidthInput.value = originalImage.width;
+                           resizeHeightInput.value = originalImage.height;
+                        }
+                    };
+                    originalImage.src = e.target.result;
+                }
+                reader.readAsDataURL(originalFile);
+                resultArea.style.display = 'none';
+                downloadLink.style.display = 'none';
+                errorMessage.style.display = 'none';
+            } else {
+                 originalPreview.style.display = 'none';
+                 originalInfo.textContent = '';
+                 originalImage = null;
+            }
+        });
+
+        resizeWidthInput.addEventListener('input', function() {
+            if (maintainAspectRatioCheckbox.checked && originalImage && this.value) {
+                resizeHeightInput.value = Math.round(parseInt(this.value) / originalAspectRatio);
+            }
+        });
+
+        resizeHeightInput.addEventListener('input', function() {
+            if (maintainAspectRatioCheckbox.checked && originalImage && this.value) {
+                resizeWidthInput.value = Math.round(parseInt(this.value) * originalAspectRatio);
+            }
+        });
+        
+        maintainAspectRatioCheckbox.addEventListener('change', function() {
+            if (this.checked && originalImage && resizeWidthInput.value) {
+                 resizeHeightInput.value = Math.round(parseInt(resizeWidthInput.value) / originalAspectRatio);
+            } else if (this.checked && originalImage && resizeHeightInput.value) {
+                 resizeWidthInput.value = Math.round(parseInt(resizeHeightInput.value) * originalAspectRatio);
+            }
+        });
+
+
+        function resizeImage() {
+            if (!originalImage || !originalFile) {
+                displayError("Please select an image file first.");
+                return;
+            }
+            errorMessage.style.display = 'none';
+
+            let newWidth = parseInt(resizeWidthInput.value);
+            let newHeight = parseInt(resizeHeightInput.value);
+
+            if (isNaN(newWidth) || newWidth <= 0 || isNaN(newHeight) || newHeight <= 0) {
+                displayError("Please enter valid positive dimensions for width and height.");
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw image onto canvas with new dimensions
+            ctx.drawImage(originalImage, 0, 0, newWidth, newHeight);
+
+            let selectedOutputFormat = outputFormatSelect.value;
+            let outputMimeType = originalFile.type; // Default to original
+            let outputExtension = originalFile.name.split('.').pop().toLowerCase();
+
+            if (selectedOutputFormat !== 'original') {
+                outputMimeType = selectedOutputFormat;
+                if (outputMimeType === 'image/jpeg') outputExtension = 'jpg';
+                else if (outputMimeType === 'image/png') outputExtension = 'png';
+                else if (outputMimeType === 'image/webp') outputExtension = 'webp';
+            }
+            
+            const originalNameWithoutExt = originalFile.name.substring(0, originalFile.name.lastIndexOf('.'));
+            const downloadFileName = `resized_${originalNameWithoutExt}.${outputExtension}`;
+
+            canvas.toBlob(function(blob) {
+                if (blob) {
+                    const resizedUrl = URL.createObjectURL(blob);
+                    resizedPreview.src = resizedUrl;
+                    resizedInfo.textContent = `Resized: ${newWidth}x${newHeight} (${(blob.size / 1024).toFixed(2)} KB, Type: ${blob.type})`;
+                    
+                    downloadLink.href = resizedUrl;
+                    downloadLink.download = downloadFileName;
+                    
+                    resultArea.style.display = 'block';
+                    downloadLink.style.display = 'inline-block';
+                } else {
+                    displayError("Error creating blob for resized image. The format might not be supported by the browser for toBlob operation (e.g. some AVIF to other format conversions).");
+                }
+            }, outputMimeType, 0.9); // Quality 0.9 for JPEG/WEBP, ignored for PNG
+        }
+
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultArea.style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

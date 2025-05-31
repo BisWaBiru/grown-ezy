@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Placeholder for an online Video to GIF converter. Client-side video processing and GIF encoding are complex.">
+    <title>Video to GIF (Placeholder) - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Video to GIF Converter</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="videoFile">Choose a video file (e.g., MP4, WEBM):</label>
+                <input type="file" id="videoFile" accept="video/mp4, video/webm, video/*">
+            </div>
+             <div class="form-group">
+                <label for="gifSettings">GIF Settings (Illustrative):</label>
+                <input type="text" id="gifSettings" placeholder="e.g., Start time, Duration, FPS (not functional)">
+            </div>
+            
+            <button onclick="attemptConversion()">Convert to GIF (Illustrative)</button>
+
+            <div class="placeholder-message" style="margin-top: 1.5rem;">
+                <h4>Functionality Notice</h4>
+                <p><strong>This tool is a placeholder.</strong> Converting video to animated GIF entirely on the client-side involves complex video frame extraction and GIF encoding (e.g., using libraries like FFmpeg.wasm or gif.js). This is generally resource-intensive and not implemented in this basic demo.</p>
+                <p>A production version would typically use server-side processing or advanced WebAssembly libraries.</p>
+            </div>
+
+            <div id="fileInfo" class="result-area" style="display:none; margin-top: 1rem;">
+                <p id="selectedFileName"></p>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        const videoFileInput = document.getElementById('videoFile');
+        const fileInfoDisplay = document.getElementById('fileInfo');
+        const selectedFileNameDisplay = document.getElementById('selectedFileName');
+
+        videoFileInput.addEventListener('change', function(event){
+            if (event.target.files && event.target.files[0]) {
+                const file = event.target.files[0];
+                selectedFileNameDisplay.textContent = `Selected file: ${file.name} (Size: ${(file.size / (1024*1024)).toFixed(2)} MB)`;
+                fileInfoDisplay.style.display = 'block';
+            } else {
+                fileInfoDisplay.style.display = 'none';
+            }
+        });
+
+        function attemptConversion() {
+            if (videoFileInput.files && videoFileInput.files[0]) {
+                alert("This is a placeholder. Actual Video to GIF conversion would occur here using advanced techniques not implemented in this demo.");
+            } else {
+                alert("Please select a video file first.");
+            }
+        }
+    </script>
+</body>
+</html>

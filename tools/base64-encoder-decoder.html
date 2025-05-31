@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Encode text strings to Base64 or decode Base64 strings back to their original text form. Supports UTF-8.">
+    <title>Base64 Encoder/Decoder - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Base64 Encoder/Decoder</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="inputText">Input Text (UTF-8):</label>
+                <textarea id="inputText" rows="6" placeholder="Enter text to encode or Base64 to decode..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button onclick="processBase64('encode')">Encode to Base64</button>
+                <button onclick="processBase64('decode')">Decode from Base64</button>
+            </div>
+             <button onclick="clearFields()" class="button-secondary" style="margin-top:10px;">Clear Fields</button>
+
+
+            <div id="resultArea" class="result-area" style="display:none; margin-top: 1.5rem;">
+                <h4>Output:</h4>
+                <textarea id="outputText" rows="6" readonly placeholder="Result will appear here..."></textarea>
+                 <button onclick="copyOutput()" class="button-secondary" style="margin-top:10px;">Copy Output</button>
+            </div>
+            <div id="messageArea" class="placeholder-message" style="display:none; margin-top:1rem;"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const inputText = document.getElementById('inputText');
+        const outputText = document.getElementById('outputText');
+        const resultArea = document.getElementById('resultArea');
+        const messageArea = document.getElementById('messageArea');
+
+        function processBase64(action) {
+            const input = inputText.value;
+            messageArea.style.display = 'none';
+            outputText.value = '';
+
+
+            if (!input.trim()) {
+                displayMessage("Input field is empty.", true);
+                resultArea.style.display = 'none';
+                return;
+            }
+
+            try {
+                if (action === 'encode') {
+                    // UTF-8 aware encoding
+                    const utf8Bytes = new TextEncoder().encode(input);
+                    // Convert byte array to binary string
+                    let binaryString = '';
+                    utf8Bytes.forEach(byte => {
+                        binaryString += String.fromCharCode(byte);
+                    });
+                    outputText.value = btoa(binaryString);
+                } else if (action === 'decode') {
+                    // UTF-8 aware decoding
+                    const binaryString = atob(input);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    outputText.value = new TextDecoder().decode(bytes);
+                }
+                resultArea.style.display = 'block';
+            } catch (e) {
+                console.error("Base64 processing error:", e);
+                displayMessage(`Error during ${action}: ${e.message}. Ensure input is valid.`, true);
+                resultArea.style.display = 'none';
+            }
+        }
+        
+        function clearFields() {
+            inputText.value = '';
+            outputText.value = '';
+            resultArea.style.display = 'none';
+            messageArea.style.display = 'none';
+        }
+
+        function copyOutput() {
+            if (outputText.value) {
+                outputText.select();
+                outputText.setSelectionRange(0, 99999); // For mobile devices
+                try {
+                    document.execCommand('copy');
+                    displayMessage('Output copied to clipboard!', false);
+                } catch (err) {
+                    displayMessage('Failed to copy output. Please copy manually.', true);
+                    console.error('Failed to copy: ', err);
+                }
+            } else {
+                displayMessage('Nothing to copy from output.', true);
+            }
+        }
+        
+        function displayMessage(message, isError) {
+            messageArea.textContent = message;
+            messageArea.style.backgroundColor = isError ? 'var(--error-color)' : 'var(--success-color)';
+            messageArea.style.color = 'white';
+            messageArea.style.borderColor = isError ? 'var(--error-color)' : 'var(--success-color)';
+            messageArea.style.display = 'block';
+            if (!isError) {
+                setTimeout(() => { messageArea.style.display = 'none'; }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

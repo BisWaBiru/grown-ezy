@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compress JPG, PNG, and WEBP images online to reduce file size while maintaining quality.">
+    <title>Image Compressor - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Image Compressor</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="imageFile">Choose an image (JPG, PNG, WEBP):</label>
+                <input type="file" id="imageFile" accept="image/jpeg, image/png, image/webp">
+            </div>
+
+            <div class="form-group">
+                <label for="qualityRange">Compression Quality (0.1 - 1.0 for JPG/WEBP):</label>
+                <input type="range" id="qualityRange" min="0.1" max="1.0" step="0.05" value="0.7">
+                <span id="qualityValue">0.7</span>
+                <small>Note: Quality setting primarily affects JPG and WEBP. PNG compression is lossless but this tool might re-encode.</small>
+            </div>
+            
+            <button onclick="compressImage()">Compress Image</button>
+
+            <div class="image-preview-container">
+                <img id="originalPreview" class="image-preview" src="#" alt="Original Image Preview" style="display:none;">
+                <p id="originalInfo"></p>
+            </div>
+
+            <div id="resultArea" class="result-area" style="display:none;">
+                <h4>Compressed Image:</h4>
+                <img id="compressedPreview" class="image-preview" src="#" alt="Compressed Image Preview">
+                <p id="compressedInfo"></p>
+                <a id="downloadLink" class="button mt-1" download="compressed_image.jpg" style="display:none;">Download Compressed Image</a>
+            </div>
+             <div id="errorMessage" class="placeholder-message" style="display:none; background-color: var(--error-color); color: white;"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const imageFileInput = document.getElementById('imageFile');
+        const qualityRange = document.getElementById('qualityRange');
+        const qualityValueDisplay = document.getElementById('qualityValue');
+        const originalPreview = document.getElementById('originalPreview');
+        const originalInfo = document.getElementById('originalInfo');
+        const compressedPreview = document.getElementById('compressedPreview');
+        const compressedInfo = document.getElementById('compressedInfo');
+        const downloadLink = document.getElementById('downloadLink');
+        const resultArea = document.getElementById('resultArea');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let originalFile = null;
+
+        qualityRange.addEventListener('input', () => {
+            qualityValueDisplay.textContent = qualityRange.value;
+        });
+
+        imageFileInput.addEventListener('change', function(event) {
+            originalFile = event.target.files[0];
+            if (originalFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalPreview.src = e.target.result;
+                    originalPreview.style.display = 'block';
+                    originalInfo.textContent = `Original: ${originalFile.name} (${(originalFile.size / 1024).toFixed(2)} KB)`;
+                }
+                reader.readAsDataURL(originalFile);
+                resultArea.style.display = 'none';
+                downloadLink.style.display = 'none';
+                errorMessage.style.display = 'none';
+            } else {
+                originalPreview.style.display = 'none';
+                originalInfo.textContent = '';
+            }
+        });
+
+        function compressImage() {
+            if (!originalFile) {
+                displayError("Please select an image file first.");
+                return;
+            }
+            errorMessage.style.display = 'none';
+
+            const quality = parseFloat(qualityRange.value);
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    let outputFormat = originalFile.type; // Default to original type
+                    let downloadFileName = `compressed_${originalFile.name}`;
+
+                    // For PNG, quality parameter in toDataURL is ignored.
+                    // If we want to convert PNG to JPG for lossy compression:
+                    // if (originalFile.type === 'image/png') {
+                    //     outputFormat = 'image/jpeg';
+                    //     downloadFileName = `compressed_${originalFile.name.split('.')[0]}.jpg`;
+                    // }
+                    // For this tool, we'll stick to compressing in its original format if possible,
+                    // or convert to JPG if quality is specified for a format that doesn't support it well.
+                    // For simplicity, we'll let toDataURL handle it. JPG and WEBP respect quality.
+
+                    if (originalFile.type === 'image/png' && quality < 1.0) {
+                        // If user wants to "compress" PNG with quality, convert to JPG
+                        outputFormat = 'image/jpeg';
+                        const nameParts = originalFile.name.split('.');
+                        nameParts.pop(); // remove original extension
+                        downloadFileName = `compressed_${nameParts.join('.')}.jpg`;
+                    }
+
+
+                    canvas.toBlob(function(blob) {
+                        if (blob) {
+                            const compressedUrl = URL.createObjectURL(blob);
+                            compressedPreview.src = compressedUrl;
+                            compressedInfo.textContent = `Compressed: (${(blob.size / 1024).toFixed(2)} KB, Type: ${blob.type})`;
+                            
+                            downloadLink.href = compressedUrl;
+                            downloadLink.download = downloadFileName;
+                            
+                            resultArea.style.display = 'block';
+                            downloadLink.style.display = 'inline-block';
+
+                            const sizeReduction = ((originalFile.size - blob.size) / originalFile.size) * 100;
+                            compressedInfo.textContent += ` - Reduced by ${sizeReduction.toFixed(2)}%`;
+                        } else {
+                             displayError("Error creating blob for compressed image.");
+                        }
+
+                    }, outputFormat, quality);
+                }
+                img.onerror = function() {
+                    displayError("Could not load the selected image. It might be corrupted or an unsupported format.");
+                }
+                img.src = event.target.result;
+            }
+            reader.onerror = function() {
+                displayError("Error reading the image file.");
+            }
+            reader.readAsDataURL(originalFile);
+        }
+        
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultArea.style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

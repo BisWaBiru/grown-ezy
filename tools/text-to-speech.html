@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert written text into natural-sounding speech. Select different voices and adjust pitch and rate.">
+    <title>Text to Speech - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Text to Speech</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="textToSpeak">Enter Text:</label>
+                <textarea id="textToSpeak" rows="6" placeholder="Type or paste text here..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="voiceSelect">Select Voice:</label>
+                <select id="voiceSelect"></select>
+            </div>
+
+            <div class="form-group">
+                <label for="rate">Rate (0.5 - 2):</label>
+                <input type="range" id="rate" min="0.5" max="2" value="1" step="0.1">
+                <span id="rateValue">1</span>
+            </div>
+
+            <div class="form-group">
+                <label for="pitch">Pitch (0 - 2):</label>
+                <input type="range" id="pitch" min="0" max="2" value="1" step="0.1">
+                <span id="pitchValue">1</span>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="speakText()">Speak</button>
+                <button onclick="stopSpeech()" class="button-secondary">Stop</button>
+                <button onclick="pauseSpeech()" class="button-secondary">Pause</button>
+                <button onclick="resumeSpeech()" class="button-secondary">Resume</button>
+            </div>
+
+            <div id="statusMessage" class="mt-1" style="color: var(--secondary-color);"></div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const textToSpeakInput = document.getElementById('textToSpeak');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const rateInput = document.getElementById('rate');
+        const pitchInput = document.getElementById('pitch');
+        const rateValueDisplay = document.getElementById('rateValue');
+        const pitchValueDisplay = document.getElementById('pitchValue');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        let speechSynthesis = window.speechSynthesis;
+        let voices = [];
+        let utterance;
+
+        function populateVoiceList() {
+            voices = speechSynthesis.getVoices();
+            voiceSelect.innerHTML = ''; // Clear existing options
+            voices.forEach((voice, i) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-lang', voice.lang);
+                option.setAttribute('data-name', voice.name);
+                voiceSelect.appendChild(option);
+            });
+            // Select a default voice if available (e.g., a local English voice)
+            const defaultVoice = voices.find(voice => voice.lang.includes('en') && voice.localService);
+            if (defaultVoice) {
+                voiceSelect.value = `${defaultVoice.name} (${defaultVoice.lang})`;
+            }
+        }
+
+        // SpeechSynthesis API might load voices asynchronously
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+        populateVoiceList(); // Call once initially in case voices are already loaded
+
+
+        rateInput.addEventListener('input', () => rateValueDisplay.textContent = rateInput.value);
+        pitchInput.addEventListener('input', () => pitchValueDisplay.textContent = pitchInput.value);
+
+        function speakText() {
+            if (speechSynthesis.speaking) {
+                statusMessage.textContent = 'Speech is already in progress. Stop or wait for it to finish.';
+                return;
+            }
+            if (textToSpeakInput.value.trim() === '') {
+                statusMessage.textContent = 'Please enter some text to speak.';
+                return;
+            }
+
+            utterance = new SpeechSynthesisUtterance(textToSpeakInput.value);
+            
+            const selectedVoiceName = voiceSelect.selectedOptions[0].getAttribute('data-name');
+            const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            }
+
+            utterance.pitch = parseFloat(pitchInput.value);
+            utterance.rate = parseFloat(rateInput.value);
+
+            utterance.onstart = () => {
+                statusMessage.textContent = 'Speaking...';
+            };
+            utterance.onend = () => {
+                statusMessage.textContent = 'Speech finished.';
+            };
+            utterance.onerror = (event) => {
+                statusMessage.textContent = `Error during speech: ${event.error}`;
+                console.error('SpeechSynthesisUtterance.onerror', event);
+            };
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeech() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                statusMessage.textContent = 'Speech stopped.';
+            } else {
+                statusMessage.textContent = 'Nothing to stop.';
+            }
+        }
+        function pauseSpeech() {
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                speechSynthesis.pause();
+                statusMessage.textContent = 'Speech paused.';
+            } else {
+                 statusMessage.textContent = 'Nothing to pause or already paused.';
+            }
+        }
+        function resumeSpeech() {
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+                statusMessage.textContent = 'Speech resumed.';
+            } else {
+                statusMessage.textContent = 'Nothing to resume or not paused.';
+            }
+        }
+
+    </script>
+</body>
+</html>

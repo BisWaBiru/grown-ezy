@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert units of length, weight, and volume. Meters to feet, kilograms to pounds, liters to gallons, and more.">
+    <title>Unit Converter - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Unit Converter</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="category">Select Category:</label>
+                <select id="category" onchange="updateUnits()">
+                    <option value="length">Length</option>
+                    <option value="weight">Weight</option>
+                    <option value="volume">Volume</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="inputValue">Value to Convert:</label>
+                <input type="number" id="inputValue" placeholder="Enter value">
+            </div>
+
+            <div class="form-group">
+                <label for="fromUnit">From Unit:</label>
+                <select id="fromUnit"></select>
+            </div>
+
+            <div class="form-group">
+                <label for="toUnit">To Unit:</label>
+                <select id="toUnit"></select>
+            </div>
+
+            <button onclick="convertUnits()">Convert</button>
+
+            <div id="resultArea" class="result-area" style="display:none;">
+                <h4>Result:</h4>
+                <p id="resultText"></p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const units = {
+            length: {
+                meter: { name: "Meter (m)", factor: 1 },
+                kilometer: { name: "Kilometer (km)", factor: 1000 },
+                centimeter: { name: "Centimeter (cm)", factor: 0.01 },
+                millimeter: { name: "Millimeter (mm)", factor: 0.001 },
+                mile: { name: "Mile (mi)", factor: 1609.34 },
+                yard: { name: "Yard (yd)", factor: 0.9144 },
+                foot: { name: "Foot (ft)", factor: 0.3048 },
+                inch: { name: "Inch (in)", factor: 0.0254 }
+            },
+            weight: {
+                kilogram: { name: "Kilogram (kg)", factor: 1 },
+                gram: { name: "Gram (g)", factor: 0.001 },
+                milligram: { name: "Milligram (mg)", factor: 0.000001 },
+                pound: { name: "Pound (lb)", factor: 0.453592 },
+                ounce: { name: "Ounce (oz)", factor: 0.0283495 }
+            },
+            volume: {
+                liter: { name: "Liter (L)", factor: 1 },
+                milliliter: { name: "Milliliter (mL)", factor: 0.001 },
+                gallon: { name: "Gallon (US gal)", factor: 3.78541 },
+                quart: { name: "Quart (US qt)", factor: 0.946353 },
+                pint: { name: "Pint (US pt)", factor: 0.473176 },
+                cup: { name: "Cup (US cup)", factor: 0.236588 },
+                fluidounce: { name: "Fluid Ounce (US fl oz)", factor: 0.0295735 }
+            }
+        };
+
+        const categorySelect = document.getElementById('category');
+        const fromUnitSelect = document.getElementById('fromUnit');
+        const toUnitSelect = document.getElementById('toUnit');
+        const inputValue = document.getElementById('inputValue');
+        const resultArea = document.getElementById('resultArea');
+        const resultText = document.getElementById('resultText');
+
+        function populateUnits(selectElement, category) {
+            selectElement.innerHTML = '';
+            for (const unitKey in units[category]) {
+                const option = document.createElement('option');
+                option.value = unitKey;
+                option.textContent = units[category][unitKey].name;
+                selectElement.appendChild(option);
+            }
+        }
+
+        function updateUnits() {
+            const selectedCategory = categorySelect.value;
+            populateUnits(fromUnitSelect, selectedCategory);
+            populateUnits(toUnitSelect, selectedCategory);
+            resultArea.style.display = 'none'; // Hide result on category change
+        }
+
+        function convertUnits() {
+            const val = parseFloat(inputValue.value);
+            const from = fromUnitSelect.value;
+            const to = toUnitSelect.value;
+            const category = categorySelect.value;
+
+            if (isNaN(val)) {
+                resultText.textContent = "Error: Please enter a valid number.";
+                resultArea.style.display = 'block';
+                return;
+            }
+
+            const fromFactor = units[category][from].factor;
+            const toFactor = units[category][to].factor;
+
+            // Convert input value to base unit (e.g., meters, kilograms, liters)
+            const valueInBaseUnit = val * fromFactor;
+            // Convert from base unit to target unit
+            const convertedValue = valueInBaseUnit / toFactor;
+
+            resultText.textContent = `${val} ${units[category][from].name} = ${convertedValue.toFixed(6)} ${units[category][to].name}`;
+            resultArea.style.display = 'block';
+        }
+
+        // Initial population
+        updateUnits();
+    </script>
+</body>
+</html>

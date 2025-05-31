@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert images between common web formats like JPG, PNG, and WEBP. Upload an image and choose your desired output format.">
+    <title>Image Format Converter - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Image Format Converter</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="imageFile">Choose an image (JPG, PNG, WEBP, GIF, BMP):</label>
+                <input type="file" id="imageFile" accept="image/jpeg, image/png, image/webp, image/gif, image/bmp">
+            </div>
+
+            <div class="image-preview-container">
+                <img id="originalPreview" class="image-preview" src="#" alt="Original Image Preview" style="display:none;">
+                <p id="originalInfo"></p>
+            </div>
+
+            <div class="form-group">
+                <label for="outputFormat">Convert to Format:</label>
+                <select id="outputFormat">
+                    <option value="image/png">PNG</option>
+                    <option value="image/jpeg">JPEG</option>
+                    <option value="image/webp">WEBP</option>
+                    <option value="image/bmp">BMP (Browser support for encoding may vary)</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="qualityControl" style="display:none;"> <label for="outputQuality">Quality (0.1 - 1.0 for JPG/WEBP):</label>
+                <input type="range" id="outputQuality" min="0.1" max="1.0" step="0.05" value="0.85">
+                <span id="qualityValue">0.85</span>
+            </div>
+            
+            <button onclick="convertImageFormat()">Convert Image</button>
+
+            <div id="resultArea" class="result-area" style="display:none; margin-top: 1.5rem;">
+                <h4>Converted Image:</h4>
+                <img id="convertedPreview" class="image-preview" src="#" alt="Converted Image Preview">
+                <p id="convertedInfo"></p>
+                <a id="downloadLink" class="button mt-1" download="converted_image.png" style="display:none;">Download Converted Image</a>
+            </div>
+            <div id="errorMessage" class="placeholder-message" style="display:none; background-color: var(--error-color); color: white;"></div>
+             <div class="placeholder-message mt-1">
+                <p><strong>Note:</strong> Conversion quality and support for output formats (especially BMP) can vary by browser. GIF animation will be lost (only first frame converted).</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const imageFileInput = document.getElementById('imageFile');
+        const originalPreview = document.getElementById('originalPreview');
+        const originalInfo = document.getElementById('originalInfo');
+        const outputFormatSelect = document.getElementById('outputFormat');
+        const qualityControlDiv = document.getElementById('qualityControl');
+        const outputQualityRange = document.getElementById('outputQuality');
+        const qualityValueDisplay = document.getElementById('qualityValue');
+        
+        const convertedPreview = document.getElementById('convertedPreview');
+        const convertedInfo = document.getElementById('convertedInfo');
+        const downloadLink = document.getElementById('downloadLink');
+        const resultArea = document.getElementById('resultArea');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let originalImage = null;
+        let originalFile = null;
+
+        outputQualityRange.addEventListener('input', () => {
+            qualityValueDisplay.textContent = outputQualityRange.value;
+        });
+
+        outputFormatSelect.addEventListener('change', function() {
+            if (this.value === 'image/jpeg' || this.value === 'image/webp') {
+                qualityControlDiv.style.display = 'block';
+            } else {
+                qualityControlDiv.style.display = 'none';
+            }
+        });
+        // Trigger change once to set initial state of quality control
+        outputFormatSelect.dispatchEvent(new Event('change'));
+
+
+        imageFileInput.addEventListener('change', function(event) {
+            originalFile = event.target.files[0];
+            if (originalFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        originalPreview.src = e.target.result;
+                        originalPreview.style.display = 'block';
+                        originalInfo.textContent = `Original: ${originalFile.name} (${originalImage.width}x${originalImage.height}, Type: ${originalFile.type}, Size: ${(originalFile.size / 1024).toFixed(2)} KB)`;
+                    };
+                    originalImage.onerror = () => {
+                        displayError("Could not load the selected image. It might be corrupted or an unsupported format for preview.");
+                        originalPreview.style.display = 'none';
+                        originalInfo.textContent = '';
+                        originalImage = null;
+                    }
+                    originalImage.src = e.target.result;
+                }
+                reader.readAsDataURL(originalFile);
+                resultArea.style.display = 'none';
+                downloadLink.style.display = 'none';
+                errorMessage.style.display = 'none';
+            } else {
+                 originalPreview.style.display = 'none';
+                 originalInfo.textContent = '';
+                 originalImage = null;
+            }
+        });
+
+        function convertImageFormat() {
+            if (!originalImage || !originalFile) {
+                displayError("Please select an image file first.");
+                return;
+            }
+            if (originalImage.width === 0 || originalImage.height === 0) {
+                displayError("Failed to decode image dimensions. The file might be corrupted or not fully loaded.");
+                return;
+            }
+            errorMessage.style.display = 'none';
+
+            const outputFormat = outputFormatSelect.value;
+            const quality = parseFloat(outputQualityRange.value);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = originalImage.naturalWidth || originalImage.width;
+            canvas.height = originalImage.naturalHeight || originalImage.height;
+            const ctx = canvas.getContext('2d');
+            
+            try {
+                ctx.drawImage(originalImage, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                displayError(`Error drawing image to canvas: ${e.message}.`);
+                return;
+            }
+
+            let outputExtension = 'png'; // Default
+            if (outputFormat === 'image/jpeg') outputExtension = 'jpg';
+            else if (outputFormat === 'image/webp') outputExtension = 'webp';
+            else if (outputFormat === 'image/bmp') outputExtension = 'bmp';
+            
+            const originalNameWithoutExt = originalFile.name.substring(0, originalFile.name.lastIndexOf('.'));
+            const downloadFileName = `converted_${originalNameWithoutExt}.${outputExtension}`;
+
+            try {
+                // For BMP, toBlob might not be supported in all browsers.
+                // toDataURL is more widely supported for BMP but creates a base64 string.
+                if (outputFormat === 'image/bmp') {
+                    const dataUrl = canvas.toDataURL(outputFormat);
+                    if (!dataUrl.startsWith('data:image/bmp')) {
+                         displayError("Browser does not support BMP conversion via canvas.toDataURL(). Try PNG or JPG.");
+                         return;
+                    }
+                    convertedPreview.src = dataUrl;
+                    // Estimating blob size from dataURL is tricky, so we'll skip precise size for BMP download.
+                    convertedInfo.textContent = `Converted: ${canvas.width}x${canvas.height} (Type: BMP)`;
+                    downloadLink.href = dataUrl;
+                    downloadLink.download = downloadFileName;
+                    resultArea.style.display = 'block';
+                    downloadLink.style.display = 'inline-block';
+                    return; // Exit for BMP as it uses toDataURL
+                }
+
+                // For other formats, use toBlob
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        const convertedUrl = URL.createObjectURL(blob);
+                        convertedPreview.src = convertedUrl;
+                        convertedInfo.textContent = `Converted: ${canvas.width}x${canvas.height} (Type: ${blob.type}, Size: ${(blob.size / 1024).toFixed(2)} KB)`;
+                        
+                        downloadLink.href = convertedUrl;
+                        downloadLink.download = downloadFileName;
+                        
+                        resultArea.style.display = 'block';
+                        downloadLink.style.display = 'inline-block';
+                    } else {
+                        displayError(`Error creating blob for ${outputFormat}. The format might not be supported by the browser for canvas.toBlob operation.`);
+                    }
+                }, outputFormat, (outputFormat === 'image/jpeg' || outputFormat === 'image/webp') ? quality : undefined);
+            } catch (e) {
+                 displayError(`Error during conversion to ${outputFormat}: ${e.message}.`);
+            }
+        }
+
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultArea.style.display = 'none';
+        }
+
+    </script>
+</body>
+</html>

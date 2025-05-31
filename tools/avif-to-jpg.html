@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert AVIF images to JPG format online. Useful for compatibility with devices or software that do not support AVIF.">
+    <title>AVIF to JPG Converter - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AVIF to JPG Converter</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            
+            <div class="form-group">
+                <label for="avifFile">Choose an AVIF image (.avif):</label>
+                <input type="file" id="avifFile" accept="image/avif">
+            </div>
+
+            <div class="image-preview-container">
+                <img id="originalPreview" class="image-preview" src="#" alt="AVIF Preview" style="display:none;">
+                <p id="originalInfo"></p>
+            </div>
+            
+            <div class="form-group">
+                <label for="jpgQuality">JPG Quality (0.1 - 1.0):</label>
+                <input type="range" id="jpgQuality" min="0.1" max="1.0" step="0.05" value="0.85">
+                <span id="qualityValue">0.85</span>
+            </div>
+
+            <button onclick="convertAvifToJpg()">Convert to JPG</button>
+
+            <div id="resultArea" class="result-area" style="display:none; margin-top: 1.5rem;">
+                <h4>Converted JPG Image:</h4>
+                <img id="jpgPreview" class="image-preview" src="#" alt="JPG Preview">
+                <p id="jpgInfo"></p>
+                <a id="downloadLink" class="button mt-1" download="converted_image.jpg" style="display:none;">Download JPG Image</a>
+            </div>
+            <div id="errorMessage" class="placeholder-message" style="display:none; background-color: var(--error-color); color: white;"></div>
+             <div class="placeholder-message mt-1">
+                <p><strong>Browser Compatibility:</strong> AVIF decoding and canvas conversion depend on browser support. This tool works best in modern browsers that fully support AVIF.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const avifFileInput = document.getElementById('avifFile');
+        const originalPreview = document.getElementById('originalPreview');
+        const originalInfo = document.getElementById('originalInfo');
+        const jpgQualityRange = document.getElementById('jpgQuality');
+        const qualityValueDisplay = document.getElementById('qualityValue');
+        
+        const jpgPreview = document.getElementById('jpgPreview');
+        const jpgInfo = document.getElementById('jpgInfo');
+        const downloadLink = document.getElementById('downloadLink');
+        const resultArea = document.getElementById('resultArea');
+        const errorMessage = document.getElementById('errorMessage');
+
+        let originalAvifFile = null;
+        let avifImage = null;
+
+        jpgQualityRange.addEventListener('input', () => {
+            qualityValueDisplay.textContent = jpgQualityRange.value;
+        });
+
+        avifFileInput.addEventListener('change', function(event) {
+            originalAvifFile = event.target.files[0];
+            if (originalAvifFile && originalAvifFile.type === 'image/avif') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avifImage = new Image();
+                    avifImage.onload = () => {
+                        originalPreview.src = e.target.result; // This might not display in all browsers if AVIF not supported by <img> tag directly
+                        originalPreview.style.display = 'block';
+                        originalInfo.textContent = `Original AVIF: ${originalAvifFile.name} (${avifImage.width}x${avifImage.height}, ${(originalAvifFile.size / 1024).toFixed(2)} KB)`;
+                        // Attempt to draw to a temporary canvas to show preview if <img> fails
+                        try {
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = avifImage.width;
+                            tempCanvas.height = avifImage.height;
+                            tempCanvas.getContext('2d').drawImage(avifImage, 0, 0);
+                            originalPreview.src = tempCanvas.toDataURL('image/png'); // show as png for preview
+                        } catch (drawError) {
+                            console.warn("Could not draw AVIF to canvas for preview, img src will be used.", drawError);
+                            originalPreview.src = e.target.result; // fallback to direct src
+                        }
+
+                    };
+                    avifImage.onerror = () => {
+                        displayError("Could not load the AVIF image. Your browser might not support AVIF or the file is corrupted.");
+                        originalPreview.style.display = 'none';
+                        originalInfo.textContent = '';
+                        avifImage = null;
+                    };
+                    avifImage.src = e.target.result; // Load the image object
+                }
+                reader.readAsDataURL(originalAvifFile);
+                resultArea.style.display = 'none';
+                downloadLink.style.display = 'none';
+                errorMessage.style.display = 'none';
+            } else {
+                displayError("Please select a valid .avif image file.");
+                originalPreview.style.display = 'none';
+                originalInfo.textContent = '';
+                originalAvifFile = null;
+                avifImage = null;
+            }
+        });
+
+        function convertAvifToJpg() {
+            if (!avifImage || !originalAvifFile) {
+                displayError("Please select an AVIF image first.");
+                return;
+            }
+            if (avifImage.width === 0 || avifImage.height === 0) {
+                // This can happen if the browser failed to decode the AVIF image properly
+                 displayError("Failed to decode AVIF image dimensions. Your browser might have limited AVIF support.");
+                return;
+            }
+            errorMessage.style.display = 'none';
+
+            const quality = parseFloat(jpgQualityRange.value);
+            const canvas = document.createElement('canvas');
+            canvas.width = avifImage.naturalWidth || avifImage.width; // naturalWidth is more reliable after load
+            canvas.height = avifImage.naturalHeight || avifImage.height;
+            const ctx = canvas.getContext('2d');
+
+            try {
+                ctx.drawImage(avifImage, 0, 0, canvas.width, canvas.height);
+            } catch (e) {
+                displayError(`Error drawing AVIF image to canvas: ${e.message}. Browser AVIF support might be incomplete.`);
+                return;
+            }
+            
+            const originalNameWithoutExt = originalAvifFile.name.substring(0, originalAvifFile.name.lastIndexOf('.'));
+            const downloadFileName = `converted_${originalNameWithoutExt}.jpg`;
+
+            try {
+                canvas.toBlob(function(blob) {
+                    if (blob) {
+                        const jpgUrl = URL.createObjectURL(blob);
+                        jpgPreview.src = jpgUrl;
+                        jpgInfo.textContent = `Converted JPG: ${canvas.width}x${canvas.height} (${(blob.size / 1024).toFixed(2)} KB)`;
+                        
+                        downloadLink.href = jpgUrl;
+                        downloadLink.download = downloadFileName;
+                        
+                        resultArea.style.display = 'block';
+                        downloadLink.style.display = 'inline-block';
+                    } else {
+                        displayError("Error creating JPG blob. This might happen if the canvas is tainted or the operation failed.");
+                    }
+                }, 'image/jpeg', quality);
+            } catch (e) {
+                 displayError(`Error converting to JPG: ${e.message}. This can occur if the browser cannot export the canvas to JPG or AVIF decoding failed.`);
+            }
+        }
+
+        function displayError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            resultArea.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

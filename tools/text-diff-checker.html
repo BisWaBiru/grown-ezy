@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare two blocks of text and highlight the differences. Useful for finding changes between versions.">
+    <title>Text Diff Checker - Online Tools</title>
+    <link rel="stylesheet" href="../style.css">
+    <!-- Diff library (jsdiff) is typically used for robust diffing.
+         This example will implement a very basic line-by-line or word-by-word comparison
+         without an external library, which will be less sophisticated.
+         For a production tool, a library like jsdiff is recommended.
+         This is a simplified "no-library" attempt.
+    -->
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Text Difference Checker</h1>
+        </div>
+    </header>
+
+    <main class="container">
+        <a href="../index.html" class="nav-back">&larr; Back to All Tools</a>
+        <div class="tool-container">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 1; min-width: 300px;">
+                    <label for="text1">Original Text:</label>
+                    <textarea id="text1" rows="10" placeholder="Paste the first text here..."></textarea>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 300px;">
+                    <label for="text2">Changed Text:</label>
+                    <textarea id="text2" rows="10" placeholder="Paste the second text here..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="diffType">Comparison Type:</label>
+                <select id="diffType">
+                    <option value="line">Line by Line</option>
+                    <option value="word">Word by Word (within lines)</option>
+                </select>
+            </div>
+            
+            <button onclick="compareTexts()">Compare Texts</button>
+
+            <div id="resultArea" class="result-area" style="display:none; margin-top: 1.5rem;">
+                <h4>Differences:</h4>
+                <div id="diffOutput" class="diff-output"></div>
+            </div>
+            <div id="diffMessage" class="placeholder-message" style="display:none; margin-top: 1rem;"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; <span id="currentYear"></span> Online Tools. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const text1Input = document.getElementById('text1');
+        const text2Input = document.getElementById('text2');
+        const diffTypeSelect = document.getElementById('diffType');
+        const diffOutput = document.getElementById('diffOutput');
+        const resultArea = document.getElementById('resultArea');
+        const diffMessage = document.getElementById('diffMessage');
+
+        // Basic Longest Common Subsequence algorithm for diffing arrays (lines or words)
+        function lcs(a, b) {
+            const m = a.length, n = b.length;
+            const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (a[i - 1] === b[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                    }
+                }
+            }
+
+            // Reconstruct diff
+            let i = m, j = n;
+            const result = [];
+            while (i > 0 || j > 0) {
+                if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
+                    result.unshift({ value: a[i - 1], type: 'common' });
+                    i--; j--;
+                } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+                    result.unshift({ value: b[j - 1], type: 'added' });
+                    j--;
+                } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+                    result.unshift({ value: a[i - 1], type: 'removed' });
+                    i--;
+                } else { // Should not happen with correct LCS logic
+                    break;
+                }
+            }
+            return result;
+        }
+        
+        function compareTexts() {
+            const text1 = text1Input.value;
+            const text2 = text2Input.value;
+            const diffType = diffTypeSelect.value;
+            diffMessage.style.display = 'none';
+
+            if (!text1 && !text2) {
+                diffMessage.textContent = "Both text fields are empty.";
+                diffMessage.style.display = 'block';
+                resultArea.style.display = 'none';
+                return;
+            }
+            
+            let diffResultHtml = "";
+
+            if (diffType === 'line') {
+                const lines1 = text1.split('\n');
+                const lines2 = text2.split('\n');
+                const diff = lcs(lines1, lines2);
+                
+                diff.forEach(item => {
+                    const escapedValue = item.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    diffResultHtml += `<span class="${item.type}">${escapedValue}\n</span>`;
+                });
+
+            } else if (diffType === 'word') {
+                // This is a more complex word-by-word diff.
+                // For simplicity, we'll do line-by-line, and then word-by-word within differing lines.
+                // A true word-level diff across the entire text is much harder without a library.
+                // This is a simplified approach.
+                const lines1 = text1.split('\n');
+                const lines2 = text2.split('\n');
+                const lineDiff = lcs(lines1, lines2);
+
+                lineDiff.forEach(lineItem => {
+                    const escapedLineValue = lineItem.value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    if (lineItem.type === 'common') {
+                        diffResultHtml += `<span class="common">${escapedLineValue}\n</span>`;
+                    } else if (lineItem.type === 'added') {
+                         // If a whole line is added, show all its words as added
+                        const words = lineItem.value.split(/(\s+)/); // Split by space, keeping spaces
+                        words.forEach(word => {
+                            if (word.trim() !== '') {
+                                diffResultHtml += `<span class="added">${word.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
+                            } else {
+                                diffResultHtml += word; // Keep spaces
+                            }
+                        });
+                        diffResultHtml += '\n';
+                    } else if (lineItem.type === 'removed') {
+                        // If a whole line is removed, show all its words as removed
+                        const words = lineItem.value.split(/(\s+)/);
+                         words.forEach(word => {
+                            if (word.trim() !== '') {
+                                diffResultHtml += `<span class="removed">${word.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`;
+                            } else {
+                                diffResultHtml += word;
+                            }
+                        });
+                        diffResultHtml += '\n';
+                    }
+                    // A more granular approach would be to find corresponding removed/added lines
+                    // and then diff words within them. This basic LCS on lines doesn't directly give pairs.
+                    // For now, this simplified version marks whole lines.
+                });
+                 diffMessage.textContent = "Note: Word-by-word diff is simplified in this version. For complex changes within lines, it might show entire lines as added/removed. A dedicated diff library provides more granular results.";
+                 diffMessage.style.display = 'block';
+            }
+
+            diffOutput.innerHTML = diffResultHtml;
+            resultArea.style.display = 'block';
+            
+            if (diffResultHtml.indexOf('added') === -1 && diffResultHtml.indexOf('removed') === -1 && (text1 || text2)) {
+                 diffMessage.textContent = "No differences found.";
+                 diffMessage.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
